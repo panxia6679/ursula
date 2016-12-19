@@ -7,6 +7,10 @@ xtradb:
 percona:
   replication: False
 
+redhat:
+  user: IBM_RHN
+  pass: w1nter_1s_p3ngu1n
+
 common:
   hwraid:
     enabled: False
