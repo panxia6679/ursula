@@ -54,6 +54,17 @@
     - heat-engine
   when: os == 'rhel' and openstack_install_method == 'source'
 
+- name: install heat services (rhel source)
+  systemd_service: name="openstack-{{ item }}"
+                   user=heat
+                   cmd=/usr/bin/{{ item }}
+                   config_files=/etc/heat/heat.conf
+  with_items:
+    - heat-api
+    - heat-api-cfn
+    - heat-engine
+  when: os == 'rhel' and openstack_install_method == 'distro'
+
 - name: heat config
   template: src=etc/heat/{{ item }} dest=/etc/heat/{{ item }} mode={{ 0644 if 'policy.json' in item else 0640 }} owner=heat group=heat
   with_items:
