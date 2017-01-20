@@ -177,9 +177,25 @@
     - haproxy.loadbalancer.j2
     - haproxy_proxies.j2
   notify: restart neutron lbaas agent
-  when: (neutron.lbaas.enabled == "smart" and
+  when: os != 'ubuntu' and openstack_install_method !='distro' and ((neutron.lbaas.enabled == "smart" and
          groups['controller'][0] not in groups['compute']) or
-         neutron.lbaas.enabled|bool
+         neutron.lbaas.enabled|bool)
+
+- name: symlink other neutron lbaas haproxy templates
+  file:
+    src: /usr/lib/python2.7/site-packages/neutron_lbaas/drivers/haproxy/templates/{{ item }}
+    dest: /etc/neutron/lbaas_templates/{{ item }}
+    owner: root
+    group: neutron
+    state: link
+    force: true
+  with_items:
+    - haproxy.loadbalancer.j2
+    - haproxy_proxies.j2
+  notify: restart neutron lbaas agent
+  when: os == 'rhel' and openstack_install_method == 'distro' and ((neutron.lbaas.enabled == "smart" and
+         groups['controller'][0] not in groups['compute']) or
+         neutron.lbaas.enabled|bool)
 
 - name: neutron lbaas config
   template:
@@ -261,6 +277,24 @@
         - /etc/neutron/neutron.conf
         - /etc/neutron/services/loadbalancer/haproxy/lbaas_agent.ini
         - /etc/neutron/neutron_lbaas.conf
+
+- name: install neutron lbaas service (rhel distro)
+  systemd_service:
+    name: "{{ item.key }}"
+    user: neutron
+    cmd: "/bin/{{ item.key }}"
+    config_dirs: /etc/neutron
+    config_files: "{{ item.value.config_files|join(',') }}"
+    #envs: "{{ neutron.service.envs }}"
+  when: os == 'rhel' and openstack_install_method == 'distro' and ((neutron.lbaas.enabled == "smart" and
+         groups['controller'][0] not in groups['compute']) or  neutron.lbaas.enabled|bool)
+  with_dict:
+    neutron-lbaasv2-agent:
+      config_files:
+        - /etc/neutron/neutron.conf
+        - /etc/neutron/services/loadbalancer/haproxy/lbaas_agent.ini
+        - /etc/neutron/neutron_lbaas.conf
+
 
 - name: kill namespaced neutron processes on upgrade
   command: pkill -f {{ item }}
