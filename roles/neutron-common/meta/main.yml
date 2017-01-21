@@ -27,3 +27,10 @@ dependencies:
     dependent_packages: "{{ neutron.osp_sys_packages }}"
     rootwrap: True
     when: openstack_install_method == 'distro'
+  - role: openstack-distro
+    project_name: neutron-lbaas
+    dependent_packages: "{{ neutron.osp_sys_packages }}"
+    rootwrap: True
+    when: os == 'rhel' and openstack_install_method == 'distro' and ((neutron.lbaas.enabled == "smart" and
+         groups['controller'][0] not in groups['compute']) or
+         neutron.lbaas.enabled|bool)
