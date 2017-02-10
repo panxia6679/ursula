@@ -45,6 +45,8 @@ common:
         - curl
         - dstat
         - ethtool
+        - tcpdump
+        - telnet
         - git
         - htop
         - iftop
@@ -78,8 +80,8 @@ common:
         - ethtool
         - git
         - iotop
+        - tcpdump
         - ltrace
-        - mtr
         - nc
         - ruby-devel
         - ruby
