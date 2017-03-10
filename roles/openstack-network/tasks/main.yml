@@ -45,6 +45,8 @@
     notify:
       - ifup neutron external interface
       - enable ip forwarding
+      - exclude ipv4 masquerade  
       - enable ipv4 masquerade
+      - persist exclude ipv4 masquerade
       - persist enable ipv4 masquerade
   when: ursula_os == 'rhel' and result.id is defined

@@ -6,6 +6,20 @@
 - name: enable ip forwarding
   sysctl: name="net.ipv4.ip_forward" value=1 sysctl_set=yes state=present reload=yes
 
+
+- name: persist exclude ipv4 masquerade
+  lineinfile:
+    dest: /etc/sysconfig/iptables
+    state: present
+    regexp: "-A POSTROUTING -s {{ item.source }} -d {{ item.destination }} -j MASQUERADE"
+    insertafter: EOF
+    line: "*nat\n-A POSTROUTING -s {{ item.source }} -d {{ item.destination }} -j MASQUERADE\nCOMMIT"
+    backup: yes
+  with_items:
+    - source: 192.168.255.0/24
+      destination: 172.16.255.0/24
+  tags: firewall
+
 - name: persist enable ipv4 masquerade
   lineinfile:
     dest: /etc/sysconfig/iptables
@@ -17,6 +31,13 @@
   with_items:
     - source: 192.168.255.0/24
       destination: 192.168.255.0/24
+  tags: firewall
+
+- name: exclude ipv4 masquerade
+  command: "iptables -t nat -A POSTROUTING -s {{ item.source }} -d {{ item.destination }} -j ACCEPT"
+  with_items:
+    - source: 192.168.255.0/24
+      destination: 172.16.255.0/24
   tags: firewall
 
 - name: enable ipv4 masquerade
