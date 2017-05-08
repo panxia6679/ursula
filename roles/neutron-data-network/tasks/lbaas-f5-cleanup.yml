@@ -1,0 +1,13 @@
+ - name: install neutron f5 lbaas service (ubuntu)
+  upstart_service:
+    name: "{{ item.name }}"
+    state: absent
+  with_items:
+    - "{{ neutron.services.f5-oslbaasv2-agent }}"
+  when: ursula_os == 'ubuntu'
+
+- name: neutron lbaas f5 agent config
+  file:
+    path: /etc/neutron/services/f5/f5-openstack-agent.ini
+    state: absent
+

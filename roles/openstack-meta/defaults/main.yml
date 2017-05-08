@@ -396,6 +396,14 @@ openstack_meta:
           config_files: /etc/neutron/neutron.conf,/etc/neutron/services/loadbalancer/haproxy/lbaas_agent.ini,/etc/neutron/neutron_lbaas.conf
           restart: on-failure
           kill_mode: process
+      f5-oslbaasv2-agent:
+        ubuntu:
+          name: f5-oslbaasv2-agent
+          desc: OpenStack Neutron F5 LBaasv2 Service
+          user: neutron
+          cmd: /usr/local/bin/f5-oslbaasv2-agent
+          config_dirs: /etc/neutron
+          config_files: /etc/neutron/neutron.conf,/etc/neutron/services/f5/f5-openstack-agent.ini,/etc/neutron/neutron_lbaas.conf
   swift:
     services:
       swift_account:

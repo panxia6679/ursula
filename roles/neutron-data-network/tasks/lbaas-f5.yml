@@ -1,0 +1,46 @@
+- name: fetch f5 service provider
+  get_url:
+    url: '{{ neutron.lbaas.f5.f5_service_provider }}'
+    dest: '/opt/openstack/current/neutron/lib/python2.7/site-packages/neutron_lbaas/drivers/f5.tgz'
+    mode: 0644
+
+- name: untar f5 server provider dependencies
+  unarchive:
+    src: '/opt/openstack/current/neutron/lib/python2.7/site-packages/neutron_lbaas/drivers/f5.tgz'
+    dest: '/opt/openstack/current/neutron/lib/python2.7/site-packages/neutron_lbaas/drivers/'
+    mode: 0644
+      
+- name: pip install f5 lbaasv2 driver
+  pip:
+    name: "{{ item.name }}"
+    version: "{{ item.version|default(omit) }}"
+    virtualenv: "{{ openstack_source.virtualenv_base }}/neutron"
+    extra_args: "{{ pip_extra_args }} {{ item.pip_extra_args|default('') }}"
+    editable: False
+  with_items: "{{ neutron.lbaas.f5.python_dependencies }}"
+  register: result
+  until: result|succeeded
+  retries: 5
+  no_log: true
+  
+- name: neutron lbaas f5 agent config
+  template:
+    src: etc/neutron/services/f5/f5-openstack-agent.ini
+    dest: /etc/neutron/services/f5/
+    mode: 0644
+  notify:
+    - restart neutron lbaas f5 agent
+    
+- name: install neutron f5 lbaas service (ubuntu)
+  upstart_service:
+    name: "{{ item.name }}"
+    user: "{{ item.user }}"
+    pidfile: "{{ item.pidfile|default(omit) }}"
+    cmd: "{{ item.cmd }}"
+    config_dirs: "{{ item.config_dirs }}"
+    config_files: "{{ item.config_files|default(omit) }}"
+    envs: "{{ neutron.service.envs }}"
+  with_items:
+    - "{{ neutron.services.f5-oslbaasv2-agent }}"
+  when: ursula_os == 'ubuntu'
+
