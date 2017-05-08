@@ -1,0 +1,17 @@
+- name: stop neutron lbaas f5 service
+  service: name=f5-oslbaasv2-agent state=stopped
+  register: stop_services
+  failed_when: "stop_services | failed and 'service not found' not in stop_services.msg"
+
+- name: uninstall neutron f5 lbaas service
+  upstart_service:
+    name: f5-oslbaasv2-agent
+    user: neutron
+    cmd: /usr/local/bin/f5-oslbaasv2-agent
+    state: absent
+
+- name: neutron lbaas f5 agent config
+  file:
+    path: /etc/neutron/services/f5/f5-openstack-agent.ini
+    state: absent
+

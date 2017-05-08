@@ -1,0 +1,69 @@
+- name: create lbaas templates folder
+  file:
+    path: "/etc/neutron/lbaas_templates/"
+    state: directory
+    owner: root
+    group: neutron
+    mode: 0755
+
+- name: template neutron lbaas haproxy
+  template:
+    src: etc/neutron/lbaas_templates/haproxy_base.j2
+    dest: /etc/neutron/lbaas_templates/haproxy_base.j2
+    owner: root
+    group: neutron
+    mode: 0644
+  notify: restart neutron lbaas agent
+
+- name: symlink other neutron lbaas haproxy templates
+  file:
+    src: /opt/openstack/current/neutron/lib/python2.7/site-packages/neutron_lbaas/services/loadbalancer/drivers/haproxy/templates/{{ item }}
+    dest: /etc/neutron/lbaas_templates/{{ item }}
+    owner: root
+    group: neutron
+    state: link
+    force: true
+  with_items:
+    - haproxy.loadbalancer.j2
+    - haproxy_proxies.j2
+  notify: restart neutron lbaas agent
+
+- name: neutron lbaas config
+  template:
+    src: etc/neutron/neutron_lbaas.conf
+    dest: /etc/neutron/neutron_lbaas.conf
+    owner: root
+    group: neutron
+    mode: 0644
+  notify:
+    - restart neutron lbaas agent
+    - restart neutron server service
+
+- name: neutron lbaas agent config
+  template:
+    src: etc/neutron/services/loadbalancer/haproxy/lbaas_agent.ini
+    dest: /etc/neutron/services/loadbalancer/haproxy
+    mode: 0644
+  notify:
+    - restart neutron lbaas agent
+
+- name: install neutron lbaas service
+  upstart_service:
+    name: "{{ item.key }}"
+    user: neutron
+    cmd: "/usr/local/bin/{{ item.key }}"
+    pidfile: "{{ item.value.pidfile|default(omit) }}"
+    start_on: "starting neutron-linuxbridge-agent"
+    stop_on: "stopping neutron-linuxbridge-agent"
+    config_dirs: /etc/neutron
+    config_files: "{{ item.value.config_files|join(',') }}"
+    envs: "{{ neutron.service.envs }}"
+  with_dict:
+    neutron-lbaasv2-agent:
+      config_files:
+        - /etc/neutron/neutron.conf
+        - /etc/neutron/services/loadbalancer/haproxy/lbaas_agent.ini
+        - /etc/neutron/neutron_lbaas.conf
+
+- name: start neutron lbaas agent
+  service: name=neutron-lbaasv2-agent state=started

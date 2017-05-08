@@ -1,0 +1,77 @@
+#- name: fetch f5 service provider
+#  get_url:
+#    url: '{{ neutron.lbaas.f5.f5_service_provider }}'
+#    dest: '/opt/openstack/current/neutron/lib/python2.7/site-packages/neutron_lbaas/drivers/f5.tgz'
+#    mode: 0644
+#
+#- name: remve f5 directory with all files
+#  file:
+#    path: "/opt/openstack/current/neutron/lib/python2.7/site-packages/neutron_lbaas/drivers/f5"
+#    state: absent
+#
+#- name: untar f5 server provider dependencies
+#  unarchive: src=/opt/openstack/current/neutron/lib/python2.7/site-packages/neutron_lbaas/drivers/f5.tgz
+#               dest=/opt/openstack/current/neutron/lib/python2.7/site-packages/neutron_lbaas/drivers/ mode=0755 copy=no
+#  notify:
+#    -- restart neutron server service 
+      
+#- name: pip install f5 lbaasv2 driver
+#  pip:
+#    name: "{{ item.name }}"
+#    version: "{{ item.version|default(omit) }}"
+#    virtualenv: "{{ openstack_source.virtualenv_base }}/neutron"
+#    editable: False
+#  with_items: "{{ neutron.lbaas.f5.python_dependencies }}"
+#  register: result
+#  until: result|succeeded
+#  retries: 5
+#  no_log: true
+#  when: 
+#    - openstack_install_method == 'source'
+#
+#- name: pip install f5 lbaasv2 driver
+#  pip:
+#    name: "{{ item.name }}"
+#    version: "{{ item.version|default(omit) }}"
+#    virtualenv: "{{ openstack_package.virtualenv_base }}/neutron"
+#    editable: False
+#  with_items: "{{ neutron.lbaas.f5.python_dependencies }}"
+#  register: result
+#  until: result|succeeded
+#  retries: 5
+#  no_log: true
+#  when:
+#    - openstack_install_method == 'package'
+
+- name: neutron lbaas config
+  template:
+    src: etc/neutron/neutron_lbaas.conf
+    dest: /etc/neutron/neutron_lbaas.conf
+    owner: root
+    group: neutron
+    mode: 0644
+  notify:
+    - restart neutron f5 lbaas agent
+    - restart neutron server service 
+
+- name: neutron lbaas f5 agent config
+  template:
+    src: etc/neutron/services/f5/f5-openstack-agent.ini
+    dest: /etc/neutron/services/f5/
+    mode: 0644
+  notify:
+    - restart neutron lbaas f5 agent
+    
+- name: install neutron f5 lbaas service
+  upstart_service:
+    name: f5-oslbaasv2-agent
+    user: neutron
+    cmd: /opt/openstack/current/neutron/bin/f5-oslbaasv2-agent 
+    config_dirs: /etc/neutron
+    config_files: /etc/neutron/neutron.conf,/etc/neutron/services/f5/f5-openstack-agent.ini,/etc/neutron/neutron_lbaas.conf
+
+- name: start neutron f5 lbaas agent
+  service:
+    name: f5-oslbaasv2-agent
+    state: started
+    enabled: True

@@ -1,0 +1,22 @@
+- name: stop neutron lbaas service
+  service: name=neutron-lbaasv2-agent state=stopped
+  register: stop_services
+  failed_when: "stop_services | failed and 'service not found' not in stop_services.msg"
+
+
+- name: delete neutron lbaas service (ubuntu)
+  upstart_service:
+    name: neutron-lbaasv2-agent
+    user: neutron
+    cmd: /usr/local/bin/neutron-lbaasv2-agent
+    state: absent
+  
+- name: delete lbaas templates folder
+  file:
+    path: "/etc/neutron/lbaas_templates/"
+    state: absent
+
+- name: delete neutron lbaas agent config
+  file:
+    path: "/etc/neutron/services/loadbalancer"
+    state: absent

@@ -12,3 +12,12 @@
 - name: restart xorp
   service: name=xorp state=restarted sleep=10
   ignore_errors: True
+
+- name: restart neutron f5 lbaas agent
+  service:
+    name: f5-oslbaasv2-agent
+    state: restarted_if_running
+  when: restart|default('True') and ((neutron.lbaas.enabled == "smart" and
+                     groups['controller'][0] not in groups['compute']) or
+                     neutron.lbaas.enabled|bool) and
+                     neutron.lbaas.f5.enabled|bool

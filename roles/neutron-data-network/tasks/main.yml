@@ -62,86 +62,26 @@
     neutron-metadata-agent:
       config_files: /etc/neutron/metadata_agent.ini
 
-- name: create lbaas templates folder
-  file:
-    path: "/etc/neutron/lbaas_templates/"
-    state: directory
-    owner: root
-    group: neutron
-    mode: 0755
 
-- name: template neutron lbaas haproxy
-  template:
-    src: etc/neutron/lbaas_templates/haproxy_base.j2
-    dest: /etc/neutron/lbaas_templates/haproxy_base.j2
-    owner: root
-    group: neutron
-    mode: 0644
-  notify: restart neutron lbaas agent
-  when: (neutron.lbaas.enabled == "smart" and
-         groups['controller'][0] not in groups['compute']) or
-         neutron.lbaas.enabled|bool
+- block:
+  - include: lbaas-haproxy-cleanup.yml
+    when: neutron.lbaas.f5.enabled | bool
 
-- name: symlink other neutron lbaas haproxy templates
-  file:
-    src: /opt/openstack/current/neutron/lib/python2.7/site-packages/neutron_lbaas/services/loadbalancer/drivers/haproxy/templates/{{ item }}
-    dest: /etc/neutron/lbaas_templates/{{ item }}
-    owner: root
-    group: neutron
-    state: link
-    force: true
-  with_items:
-    - haproxy.loadbalancer.j2
-    - haproxy_proxies.j2
-  notify: restart neutron lbaas agent
-  when: (neutron.lbaas.enabled == "smart" and
-         groups['controller'][0] not in groups['compute']) or
-         neutron.lbaas.enabled|bool
+  - include: lbaas-f5-cleanup.yml
+    when: neutron.lbaas.f5.enabled | bool == false
 
-- name: neutron lbaas config
-  template:
-    src: etc/neutron/neutron_lbaas.conf
-    dest: /etc/neutron/neutron_lbaas.conf
-    owner: root
-    group: neutron
-    mode: 0644
-  when: (neutron.lbaas.enabled == "smart" and
-         groups['controller'][0] not in groups['compute']) or
-         neutron.lbaas.enabled|bool
-  notify:
-    - restart neutron lbaas agent
+  - include: lbaas-f5.yml
+    when: neutron.lbaas.f5.enabled | bool
 
-- name: neutron lbaas agent config
-  template:
-    src: etc/neutron/services/loadbalancer/haproxy/lbaas_agent.ini
-    dest: /etc/neutron/services/loadbalancer/haproxy
-    mode: 0644
-  when: (neutron.lbaas.enabled == "smart" and
-         groups['controller'][0] not in groups['compute']) or
-         neutron.lbaas.enabled|bool
-  notify:
-    - restart neutron lbaas agent
+  - include: lbaas-haproxy.yml
+    when: neutron.lbaas.f5.enabled | bool == false
+  when: (neutron.lbaas.enabled == "smart" and groups['controller'][0] not in groups['compute']) or neutron.lbaas.enabled|bool
 
-- name: install neutron lbaas service
-  upstart_service:
-    name: "{{ item.key }}"
-    user: neutron
-    cmd: "/usr/local/bin/{{ item.key }}"
-    pidfile: "{{ item.value.pidfile|default(omit) }}"
-    start_on: "starting neutron-linuxbridge-agent"
-    stop_on: "stopping neutron-linuxbridge-agent"
-    config_dirs: /etc/neutron
-    config_files: "{{ item.value.config_files|join(',') }}"
-    envs: "{{ neutron.service.envs }}"
-  when: (neutron.lbaas.enabled == "smart" and
-         groups['controller'][0] not in groups['compute']) or
-         neutron.lbaas.enabled|bool
-  with_dict:
-    neutron-lbaasv2-agent:
-      config_files:
-        - /etc/neutron/neutron.conf
-        - /etc/neutron/services/loadbalancer/haproxy/lbaas_agent.ini
-        - /etc/neutron/neutron_lbaas.conf
+- block:
+  - include: lbaas-haproxy-cleanup.yml
+  - include: lbaas-f5-cleanup.yml
+  when: neutron.lbaas.enabled|bool == false
+
 
 - name: kill namespaced neutron processes on upgrade
   command: pkill -f {{ item }}
@@ -168,12 +108,6 @@
     - neutron-l3-agent
     - neutron-dhcp-agent
     - neutron-metadata-agent
-
-- name: start neutron lbaas agent
-  service: name=neutron-lbaasv2-agent state=started
-  when: (neutron.lbaas.enabled == "smart" and
-         groups['controller'][0] not in groups['compute']) or
-         neutron.lbaas.enabled|bool
 
 - include: ipchanged.yml
 

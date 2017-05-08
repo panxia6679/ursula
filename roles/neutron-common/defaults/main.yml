@@ -69,6 +69,30 @@ neutron:
     service_plugin:
       - neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPluginv2
     service_provider: LOADBALANCERV2:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default
+    f5:
+      enabled: False
+      debug: False
+      periodic_interval: 10
+      f5_ha_type: standalone
+      f5_external_physical_mappings: "default:1.2:True"
+      f5_vtep_folder: 'Common'
+      f5_vtep_selfip_name: 'vtep'
+      advertised_tunnel_types: vxlan
+      f5_populate_static_arp: False
+      l2_population: True
+      f5_global_routed_mode: False
+      use_namespaces: True
+      max_namespaces_per_tenant: 1
+      f5_route_domain_strictness: False
+      f5_snat_mode: True
+      f5_snat_addresses_per_subnet: 1
+      f5_common_external_networks: False
+      f5_bigip_lbaas_device_driver: f5_openstack_agent.lbaasv2.drivers.bigip.icontrol_driver.iControlDriver
+      icontrol_hostname: 169.46.128.131
+      icontrol_username: admin
+      icontrol_password: admin
+      f5_parent_ssl_profile: clientssl
+      service_provider: LOADBALANCERV2:F5Networks:neutron_lbaas.drivers.f5.driver_v2.F5LBaaSV2Driver:default
   service:
     envs: []
   source:
@@ -76,7 +100,9 @@ neutron:
     constrain: True
     upper_constraints: 'https://raw.githubusercontent.com/openstack/requirements/stable/mitaka/upper-constraints.txt'
     python_dependencies:
-      - { name: "git+git://github.com/openstack/neutron-lbaas.git@stable/mitaka#egg=neutron-lbaas" }
+      - { name: "git+git://github.com/F5Networks/neutron-lbaas.git@stable/mitaka#egg=neutron-lbaas" }
+      - { name: "git+https://github.com/F5Networks/f5-openstack-lbaasv2-driver@v9.3.0.b2" }
+      - { name: "git+https://github.com/F5Networks/f5-openstack-agent@v9.3.0.b2" }
       - { name: PyMySQL }
     system_dependencies:
       - conntrack
