@@ -61,6 +61,7 @@
     version: "{{ item.version|default(omit) }}"
     virtualenv: "{{ openstack_source.virtualenv_base }}/{{ project_name }}"
     extra_args: "{{ pip_extra_args }}"
+    editable: false
   with_items: "{{ openstack_source.python_dependencies }}"
   register: result
   until: result|succeeded

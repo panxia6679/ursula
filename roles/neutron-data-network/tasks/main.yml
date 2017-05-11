@@ -82,6 +82,12 @@
          groups['controller'][0] not in groups['compute']) or
          neutron.lbaas.enabled|bool
 
+- name: symlink lbaas filter 
+  file: src=/opt/openstack/current/neutron/etc/neutron/rootwrap.d/lbaas-haproxy.filters 
+        dest=/etc/neutron/rootwrap.d/lbaas-haproxy.filters
+        mode=0644
+        state=link
+
 - name: symlink other neutron lbaas haproxy templates
   file:
     src: /opt/openstack/current/neutron/lib/python2.7/site-packages/neutron_lbaas/services/loadbalancer/drivers/haproxy/templates/{{ item }}

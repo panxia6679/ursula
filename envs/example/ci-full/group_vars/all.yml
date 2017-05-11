@@ -6,15 +6,37 @@ undercloud_cidr:
 
 state_path_base: /opt/stack/data
 
-neutron:
-  enable_external_interface: True
-  lbaas:
-    enabled: True
-
 keystone:
   ldap_domain:
     enabled: True
     domain: users
 
+neutron:
+  enable_external_interface: True
+  path_mtu: 1400
+  l3ha:
+    enabled: True
+    max_agents: 2
+    min_agents: 2
+    cidr: 169.254.192.0/18
+    password: "{{ secrets.service_password }}"
+    interval: 2
+  lbaas:
+    enabled: True
+
+heat:
+  enabled: True
+  debug: True
+
 serverspec:
   enabled: True
+
+horizon:
+  customize: True
+  logo_url: https://file-mirror.openstack.blueboxgrid.com/horizon-branding/BluemixforDashboard.png
+  favicon_url: https://file-mirror.openstack.blueboxgrid.com/horizon-branding/bluebox.ico
+  distro:
+    python_post_dependencies:
+      - name: bb-horizon-customization
+        version: 1.0.0.dev25
+        pip_extra_args: "--extra-index-url https://bluebox:jlkgtrherkjgl43tg2@pypi-mirror.openstack.blueboxgrid.com/bluebox/private/+simple"
