@@ -1,0 +1,36 @@
+- name: neutron lbaas f5 agent config
+  template:
+    src: etc/neutron/services/f5/f5-openstack-agent.ini
+    dest: /etc/neutron/services/f5/
+    mode: 0644
+  notify:
+    - restart neutron f5 lbaas agent
+
+- name: neutron lbaas config
+  template:
+    src: etc/neutron/neutron_lbaas.conf
+    dest: /etc/neutron/neutron_lbaas.conf
+    owner: root
+    group: neutron
+    mode: 0644
+  notify:
+    - restart neutron f5 lbaas agent
+    - restart neutron server service
+    
+- name: install neutron f5 lbaas service (ubuntu)
+  upstart_service:
+    name: "{{ item.name }}"
+    user: "{{ item.user }}"
+    pidfile: "{{ item.pidfile|default(omit) }}"
+    cmd: "{{ item.cmd }}"
+    config_dirs: "{{ item.config_dirs }}"
+    config_files: "{{ item.config_files|default(omit) }}"
+  with_items:
+    - "{{ neutron.services.f5_oslbaasv2_agent }}"
+  when: ursula_os == 'ubuntu'
+
+- name: start neutron f5 lbaas agent
+  service:
+    name: "{{ neutron.services.f5_oslbaasv2_agent.name }}"
+    state: started
+    enabled: True

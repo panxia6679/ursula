@@ -1,0 +1,26 @@
+- name: check whether haproxy loadbalancers exists
+  shell: . /root/stackrc;  neutron lbaas-loadbalancer-list -c provider | grep haproxy
+  failed_when: false
+  changed_when: false
+  register: result_neutron_loadblancers_haproxy
+  delegate_to: "{{ groups['controller'][0] }}"
+  run_once: true
+
+- name: Fail when there is haproxy loadbalancer when enabling f5 lbaasv2
+  fail: msg="There is haproxy loadbalancer. Please remove all haproxy loadbalancers before enabling f5 lbaasv2."
+  when: result_neutron_loadblancers_haproxy.rc == 0
+  
+- name: ensure neutron.lbaas.f5.icontrol_hostname is defined
+  assert:
+    that: "neutron.lbaas.f5.icontrol_hostname is defined"
+    msg: "neutron.lbaas.f5.icontrol_hostname must be defined because f5 lbaasv2 is enabled"
+
+- name: ensure neutron.lbaas.f5.icontrol_username is defined
+  assert:
+    that: "neutron.lbaas.f5.icontrol_username is defined"
+    msg: "neutron.lbaas.f5.icontrol_username must be defined because f5 lbaasv2 is enabled"
+
+- name: ensure neutron.lbaas.f5.icontrol_password is defined
+  assert:
+    that: "neutron.lbaas.f5.icontrol_password is defined"
+    msg: "neutron.lbaas.f5.icontrol_password must be defined because f5 lbaasv2 is enabled"
