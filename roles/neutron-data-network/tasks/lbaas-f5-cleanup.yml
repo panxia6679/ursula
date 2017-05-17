@@ -1,0 +1,20 @@
+- name: stop neutron lbaas f5 service
+  service: name="{{ item.name }}" state=stopped must_exist=false
+  with_items:
+    - "{{ neutron.services.f5_oslbaasv2_agent }}"
+
+- name: install neutron f5 lbaas service (ubuntu)
+  upstart_service:
+    name: "{{ item.name }}"
+    state: absent
+    user: "{{ item.user }}"
+    cmd: "{{ item.cmd }}"
+  with_items:
+    - "{{ neutron.services.f5_oslbaasv2_agent }}"
+  when: ursula_os == 'ubuntu'
+
+- name: neutron lbaas f5 agent config
+  file:
+    path: /etc/neutron/services/f5/f5-openstack-agent.ini
+    state: absent
+
