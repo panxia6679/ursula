@@ -9,6 +9,7 @@ neutron:
     neutron_linuxbridge_agent: "{{ openstack_meta.neutron.services.neutron_linuxbridge_agent[ursula_os] }}"
     neutron_metadata_agent: "{{ openstack_meta.neutron.services.neutron_metadata_agent[ursula_os] }}"
     neutron_lbaasv2_agent: "{{ openstack_meta.neutron.services.neutron_lbaasv2_agent[ursula_os] }}"
+    f5_oslbaasv2_agent: "{{ openstack_meta.neutron.services.f5_oslbaasv2_agent[ursula_os] }}"
   jellyroll: False
   enable_fatal_deprecations: True
   l2_population: False
@@ -68,6 +69,7 @@ neutron:
     # controllers are dedicated.
     enabled: smart
     haproxy:
+      service_provider: LOADBALANCERV2:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default
       maxconn: 200000
       # timeouts default to ms unless explicitly defined
       # default values are connect 5000, client 50000, server 50000
@@ -75,10 +77,36 @@ neutron:
         connect: 5000
         client: 50000
         server: 50000
+    f5:
+      enabled: False
+      debug: False
+      periodic_interval: 10
+      f5_ha_type: standalone
+      f5_external_physical_mappings: "default:1.2:True"
+      f5_vtep_folder: 'Common'
+      f5_vtep_selfip_name: 'vtep'
+      advertised_tunnel_types: vxlan
+      f5_populate_static_arp: False
+      l2_population: True
+      f5_global_routed_mode: False
+      use_namespaces: True
+      max_namespaces_per_tenant: 1
+      f5_route_domain_strictness: False
+      f5_snat_mode: True
+      f5_snat_addresses_per_subnet: 1
+      f5_common_external_networks: False
+      f5_bigip_lbaas_device_driver: f5_openstack_agent.lbaasv2.drivers.bigip.icontrol_driver.iControlDriver
+      icontrol_hostname: 256.256.256.256
+      icontrol_username: admin
+      icontrol_password: admin
+      f5_parent_ssl_profile: clientssl
+      service_provider: LOADBALANCERV2:F5Networks:neutron_lbaas.drivers.f5.driver_v2.F5LBaaSV2Driver:default
+      f5_service_provider_url: "https://github.com/F5Networks/neutron-lbaas/releases/download/v9.1.0/f5.tgz"
     interface_driver: neutron.agent.linux.interface.BridgeInterfaceDriver
     service_plugin:
       - neutron_lbaas.services.loadbalancer.plugin.LoadBalancerPluginv2
-    service_provider: LOADBALANCERV2:Haproxy:neutron_lbaas.drivers.haproxy.plugin_driver.HaproxyOnHostPluginDriver:default
+  service:
+    envs: []
   distro:
     project_packages:
       - openstack-neutron
@@ -97,6 +125,8 @@ neutron:
     upper_constraints: '{{ openstack_meta.upper_constraints }}'
     python_dependencies:
       - { name: "git+git://github.com/openstack/neutron-lbaas.git@stable/newton#egg=neutron-lbaas" }
+      - { name: "git+https://github.com/F5Networks/f5-openstack-lbaasv2-driver@v9.3.1.b1" }
+      - { name: "git+https://github.com/F5Networks/f5-openstack-agent@v9.3.1.b1" }
       - { name: PyMySQL }
     python_post_dependencies: []
     system_dependencies:

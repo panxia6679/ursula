@@ -1,0 +1,46 @@
+- block:
+  - name: fetch f5 service provider
+    get_url:
+      url: '{{ neutron.lbaas.f5.f5_service_provider_url }}'
+      dest: '/opt/openstack/current/neutron/lib/python2.7/site-packages/neutron_lbaas/drivers/f5.tgz'
+      mode: 0644
+  
+  # unarchive is not able to overwrite existing file, so remove the directory before unarcheve
+  - name: remve f5 directory with all files
+    file:
+      path: "/opt/openstack/current/neutron/lib/python2.7/site-packages/neutron_lbaas/drivers/f5"
+      state: absent
+  
+  - name: untar f5 server provider dependencies
+    unarchive: src=/opt/openstack/current/neutron/lib/python2.7/site-packages/neutron_lbaas/drivers/f5.tgz
+               dest=/opt/openstack/current/neutron/lib/python2.7/site-packages/neutron_lbaas/drivers/ mode=0755 copy=no
+    notify:
+      - restart neutron server service 
+  when:
+    - openstack_install_method == 'source'
+  
+- name: neutron lbaas f5 agent config
+  template:
+    src: etc/neutron/services/f5/f5-openstack-agent.ini
+    dest: /etc/neutron/services/f5/
+    mode: 0644
+  notify:
+    - restart neutron lbaas f5 agent
+    
+- name: install neutron f5 lbaas service (ubuntu)
+  upstart_service:
+    name: "{{ item.name }}"
+    user: "{{ item.user }}"
+    pidfile: "{{ item.pidfile|default(omit) }}"
+    cmd: "{{ item.cmd }}"
+    config_dirs: "{{ item.config_dirs }}"
+    config_files: "{{ item.config_files|default(omit) }}"
+  with_items:
+    - "{{ neutron.services.f5_oslbaasv2_agent }}"
+  when: ursula_os == 'ubuntu'
+
+- name: start neutron f5 lbaas agent
+  service:
+    name: "{{ neutron.services.f5_oslbaasv2_agent.name }}"
+    state: started
+    enabled: True

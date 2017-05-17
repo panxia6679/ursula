@@ -1,0 +1,19 @@
+- name: delete neutron lbaas service (ubuntu)
+  upstart_service:
+    name: "{{ item.name }}"
+    state: absent
+    cmd: "{{ item.cmd }}"
+    user: "{{ item.user }}"
+  with_items:
+    - "{{ neutron.services.neutron_lbaasv2_agent }}"
+  when: ursula_os == 'ubuntu'
+  
+- name: delete lbaas templates folder
+  file:
+    path: "/etc/neutron/lbaas_templates/"
+    state: absent
+
+- name: delete neutron lbaas agent config
+  file:
+    path: "/etc/neutron/services/loadbalancer"
+    state: absent

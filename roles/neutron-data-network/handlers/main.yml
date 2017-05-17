@@ -7,10 +7,21 @@
   service:
     name: "{{ neutron.services.neutron_lbaasv2_agent.name }}"
     state: restarted_if_running
-  when: restart|default('True') and ((neutron.lbaas.enabled == "smart" and
-                     groups['controller'][0] not in groups['compute']) or
-                     neutron.lbaas.enabled|bool)
+    must_exist: false
+  when: 
+    - restart|default('True')
+    - ((neutron.lbaas.enabled == "smart" and groups['controller'][0] not in groups['compute']) or neutron.lbaas.enabled|bool)
 
 - name: restart xorp
   service: name=xorp state=restarted sleep=10
   ignore_errors: True
+
+- name: restart neutron lbaas f5 agent
+  service:
+    name: "{{ neutron.services.f5_oslbaasv2_agent.name }}"
+    state: restarted_if_running
+    must_exist: false
+  when: 
+    - restart|default('True')
+    - ((neutron.lbaas.enabled == "smart" and groups['controller'][0] not in groups['compute']) or neutron.lbaas.enabled|bool)
+    - neutron.lbaas.f5.enabled|bool

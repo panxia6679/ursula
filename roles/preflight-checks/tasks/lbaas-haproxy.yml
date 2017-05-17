@@ -1,0 +1,11 @@
+- name: check whether f5 loadbalancers exists
+  shell: . /root/stackrc;  neutron lbaas-loadbalancer-list -c provider | grep f5networks
+  failed_when: false
+  changed_when: false
+  register: result_neutron_loadblancers_f5
+  delegate_to: "{{ groups['controller'][0] }}"
+  run_once: true   
+
+- name: Fail when there is f5 loadbalancer when enabling haproxy lbaasv2
+  fail: msg="There is f5 loadbalancer. Please remove all f5 loadbalancers before enabling haproxy lbaasv2."
+  when: result_neutron_loadblancers_f5.rc == 0
