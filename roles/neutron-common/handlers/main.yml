@@ -11,3 +11,9 @@
     - "{{ neutron.services.neutron_linuxbridge_agent }}"
     - "{{ neutron.services.neutron_metadata_agent }}"
     - "{{ neutron.services.neutron_lbaasv2_agent }}"
+
+- name: restart neutron server service
+  service: name={{ item.name }} state=restarted_if_running must_exist=false
+  when: restart|default(True)
+  with_items:
+    - "{{ neutron.services.neutron_server }}"

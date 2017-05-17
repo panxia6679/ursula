@@ -4,3 +4,14 @@
 
 - include: subnet.yml param={{ item }}
   with_items: "{{ neutron.subnets }}"
+
+- block:
+  - include: lbaas-f5.yml
+    when:
+      - neutron.lbaas.f5.enabled is defined
+      - neutron.lbaas.f5.enabled|bool
+
+  - include: lbaas-haproxy.yml
+    when: not (neutron.lbaas.f5.enabled is defined or neutron.lbaas.f5.enabled|bool)
+  when: (neutron.lbaas.enabled == "smart" and groups['controller'][0] not in groups['compute'])
+        or neutron.lbaas.enabled|bool
