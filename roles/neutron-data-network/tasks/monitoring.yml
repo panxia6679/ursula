@@ -7,12 +7,31 @@
     - neutron-metadata-agent
   notify: restart sensu-client
 
-- name: neutron lbaas process check
-  sensu_process_check: service=neutron-lbaasv2-agent
-  notify: restart sensu-client
-  when: (neutron.lbaas.enabled == "smart" and
-         groups['controller'][0] not in groups['compute']) or
-         neutron.lbaas.enabled|bool
+- block:
+  - name: add neutron lbaas process check
+    sensu_process_check: service=neutron-lbaasv2-agent
+    notify: restart sensu-client
+
+  - name: delete neutron f5 lbaas process check
+    sensu_process_check: service=f5-oslbaasv2-agent
+    state: absent
+    notify: restart sensu-client
+  when:
+    - (neutron.lbaas.enabled == "smart" and groups['controller'][0] not in groups['compute']) or neutron.lbaas.enabled|bool
+    - not neutron.lbaas.f5.enabled|bool
+
+- block:
+  - name: delete neutron lbaas process check
+    sensu_process_check: service=neutron-lbaasv2-agent
+    state: absent
+    notify: restart sensu-client
+
+  - name: add neutron f5 lbaas process check
+    sensu_process_check: service=f5-oslbaasv2-agent
+    notify: restart sensu-client  
+  when: 
+    - (neutron.lbaas.enabled == "smart" and groups['controller'][0] not in groups['compute']) or neutron.lbaas.enabled|bool
+    - neutron.lbaas.f5.enabled|bool
 
 - name: ipchanged process check
   sensu_process_check: service=/usr/local/sbin/ipchanged
